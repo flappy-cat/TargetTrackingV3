@@ -20,6 +20,7 @@ public slots:
 
 private:
     static ServiceSerialPayload* instance;
+
 public:
     static ServiceSerialPayload* getInstance();
 
@@ -33,6 +34,7 @@ public:
     DataParser4Payload m_parser_Payload;
 
 public:
+
     QTimer *timerSend;
 
     void SendData();

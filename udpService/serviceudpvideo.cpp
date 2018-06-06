@@ -178,11 +178,11 @@ void ServiceUDPVideo::ParseDataFrame (unsigned char *bufData, int dataLen)
 
         if(pService->m_pSerial_Payload->isOpen ())
         {
-            qDebug()<<"From UDP to serialport";
+            //qDebug()<<"From UDP to serialport";
 
             //pService->Send_Data (vecPayload);
             QByteArray bufArray((char*)bufData , dataLen);
-            qDebug()<<bufArray;
+            //qDebug()<<bufArray.toHex ();
             emit Send_Data_signal (bufArray);
             //for(int i=0;i<vecPayload.size ();i++)
                 //qDebug("%x",vecPayload[i]);

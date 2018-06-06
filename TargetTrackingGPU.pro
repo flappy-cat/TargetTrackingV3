@@ -2,7 +2,7 @@ QT += core network serialport
 QT -= gui
 
 TARGET = TargetTrackingGPU
-CONFIG += console
+CONFIG += console link_pkgconfig
 CONFIG -= app_bundle
 
 TEMPLATE = app
@@ -18,8 +18,7 @@ SOURCES += main.cpp \
     udpService/udpsendservice.cpp \
     serialPortService/serviceserialfirectrl.cpp \
     serialPortService/dataparser4firectrl.cpp \
-    videoProcService/trackalgorithm.cpp \
-    log4cat.cpp
+    videoProcService/trackalgorithm.cpp
 
 HEADERS += \
     globalsettings.h \
@@ -33,7 +32,6 @@ HEADERS += \
     serialPortService/serviceserialfirectrl.h \
     serialPortService/dataparser4firectrl.h \
     videoProcService/trackalgorithm.h \
-    log4cat.h \
     algorithm/include/tracker.h \
     algorithm/include/calibrateinformationmeasure_global.h \
     algorithm/include/calibrateinformationmeasure.h \
@@ -50,15 +48,12 @@ HEADERS += \
 
 INCLUDEPATH += ./serialPortService ./udpService ./videoProcService ./algorithm/include
 
-INCLUDEPATH += /usr/local/include/opencv310 /usr/local/include/ffmpeg \
-                /usr/include/log4cplus
-
-LIBS += -L/usr/local/lib/opencv310 -lopencv_core -lopencv_imgproc   -lopencv_videoio \
-    -lopencv_highgui  -lopencv_video  -lopencv_features2d -lopencv_calib3d  -lopencv_imgcodecs \
-    -lopencv_shape -lopencv_cudaobjdetect -lopencv_cudawarping -lopencv_cudaimgproc
-LIBS += -L/usr/local/lib -lavcodec-ffmpeg -lavutil-ffmpeg
-LIBS += -L../algorithm/lib -lcvFeatureExtractMatch -lKCFTracker -lCalibrateInformationMeasure
-LIBS += -L/usr/lib/aarch64-linux-gnu/ -llog4cplus
+#INCLUDEPATH += /usr/local/include/opencv310 /usr/local/include/ffmpeg /usr/include/log4cplus
+PKGCONFIG += opencv
+#LIBS += -L/usr/local/lib/opencv310 -lopencv_core -lopencv_imgproc   -lopencv_videoio \
+#    -lopencv_highgui  -lopencv_video  -lopencv_features2d -lopencv_calib3d  -lopencv_imgcodecs \
+#   -lopencv_shape -lopencv_cudaobjdetect -lopencv_cudawarping -lopencv_cudaimgproc
+LIBS += -L/usr/local/lib -lcvFeatureExtractMatch -lKCFTracker -lCalibrateInformationMeasure
 
 OBJECTS_DIR += ./temp
 MOC_DIR += ./temp

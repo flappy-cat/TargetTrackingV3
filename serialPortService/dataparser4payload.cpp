@@ -121,7 +121,10 @@ void DataParser4Payload::ParseFramePayload (QByteArray& bufData)
 //strOut = "Payload(No. 0x23) --[UDP]--> ADT\n";
 //qDebug()<<strOut;
 #endif
+
         DataManager *pDataManager = DataManager::GetInstance ();
+
+        pDataManager->mutex_Payload.lock ();
 
         pDataManager->ctrlMode = bufData[14];
 
@@ -164,6 +167,9 @@ void DataParser4Payload::ParseFramePayload (QByteArray& bufData)
         tempBuf[3] = bufData[27];
         val = (float*)(&tempBuf);
         pDataManager->measureDistance = *val;
+
+
+        pDataManager->mutex_Payload.unlock ();
     }
 }
 

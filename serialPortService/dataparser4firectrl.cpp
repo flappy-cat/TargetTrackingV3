@@ -133,13 +133,15 @@ void DataParser4FireCtrl::ParseFrameFireCtrl (QByteArray& bufData)
         val = (float*)(&tempBuf);
         pDataManager->yawAngle_predict = *val;
 
+        //
         pDataManager->mutex_predictdata.lock ();
 
-        static unsigned int tt =0;
-        if(++tt%30==0)
-        {
-            qDebug()<<"Target predict Angle="<<pDataManager->yawAngle_predict<<","<<pDataManager->pitchAngle_predict;
-        }
+        //static unsigned int tt =0;
+        //if(++tt%100==0)
+        //{
+            //qDebug()<<"Target predict Angle="<<pDataManager->yawAngle_predict<<","<<pDataManager->pitchAngle_predict;
+
+        //}
 
         pDataManager->yawAngle_predict = pDataManager->yawAngle_predict*PI/180;
         pDataManager->pitchAngle_predict = pDataManager->pitchAngle_predict*PI/180;

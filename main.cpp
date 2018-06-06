@@ -4,8 +4,9 @@
 #include "serviceserialpayload.h"
 #include "managerofcommunicaion.h"
 #include "serviceserialfirectrl.h"
-#include "log4cat.h"
+
 #include "videoencodeh264.h"
+#include "udpsendservice.h"
 int main(int argc, char *argv[])
 {
     QCoreApplication    a(argc, argv);
@@ -14,6 +15,8 @@ int main(int argc, char *argv[])
     GlobalSettings* pInstance = GlobalSettings::getInstance ();
     pInstance->initSettings ();
 
+    UdpSendService* pSender = UdpSendService::GetInstance ();
+    Q_UNUSED(pSender);
 
     //===============Get the singleton
     ServiceSerialPayload*   pSerialServicePayload   =      ServiceSerialPayload::getInstance ();
@@ -30,12 +33,7 @@ int main(int argc, char *argv[])
     QObject::connect (&encThread,SIGNAL(finished()),&encThread,SLOT(deleteLater()));
     QObject::connect (&udpThread,SIGNAL(Send_Data_signal(QByteArray)),pSerialServicePayload,SLOT(Send_Data(QByteArray)));
 
-    Log4Cat * pLog =    Log4Cat::getInstance ();
-    pLog->InitLog ("/home/nvidia/appsettings/log4cplus.properties");
     qDebug()<<"Starting Initialize Global Serttings\n";
-
-
-
 
     //4-Start VideoCapture
 

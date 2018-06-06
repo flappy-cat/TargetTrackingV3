@@ -9,6 +9,7 @@ class DataParser4Payload : public CDataParserBase
 public:
     DataParser4Payload();
     ~DataParser4Payload();
+
 public:
     quint8 nBufIndex;
     quint16 frameLen;

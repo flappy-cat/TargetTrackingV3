@@ -3,7 +3,7 @@
 #include <QDebug>
 #include "globalsettings.h"
 #include "datamanager.h"
-#include "log4cat.h"
+
 
 
 VideoEncodeH264::VideoEncodeH264(QObject* parent):QThread(parent)
@@ -53,7 +53,7 @@ void VideoEncodeH264::StartEncodeLoop ()
         pDataManager->bIsStartVideoCapture = true;
         while(!cap.isOpened ())
         {
-#if FLAPPYDEBUG
+#if 0
             qDebug()<<"Attempt to open camera";
 #endif
             if(pDataManager->videoSrc == 0x01)
@@ -113,7 +113,7 @@ void VideoEncodeH264::StartEncodeLoop ()
                 cap.release ();
 
                 capFrameCnt = 0;
-#ifdef SAVELOCALFILE
+#if 0
                 if(fp_out != NULL)
                 {
                     fflush(fp_out);
@@ -227,7 +227,13 @@ void VideoEncodeH264::StartEncodeLoop ()
 
 
                     pDataManager->yawAngle_target = pDataManager->yawAngle_target*180/PI;
-                    pDataManager->pitchAngle_target = pDataManager->pitchAngle_target*180/PI;
+                    pDataManager->pitchAngle_target =pDataManager->pitchAngle_target*180/PI;
+
+                    //static int ii= 0;
+                    //if(++ii%25==0)
+                    //{
+                     //   qDebug("pitch angle=%3.6f , yaw angle=%3.6f",pDataManager->pitchAngle_target,pDataManager->yawAngle_target);
+                    //}
 
                     if(pDataManager->assistFlag == 0x01)//open
                     {
@@ -307,7 +313,6 @@ void VideoEncodeH264::StartEncodeLoop ()
             if (ret < 0)
             {
                // printf("Error encoding frame\n");
-                EASYLOG("Error encoding frame");
                 return;
             }
             if (got_output)

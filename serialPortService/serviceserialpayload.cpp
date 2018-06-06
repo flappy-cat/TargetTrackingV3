@@ -111,14 +111,23 @@ void ServiceSerialPayload::SendData()
 
     //===edit 2017-12-29  15:37 --by yh
     //===To avoid overshooting , set the angle value devided by 3.
-
-    float pitchAngle = pDataManager->pitchAngle_target / 2;
+    float pitchAngle,yawAngle;
+    if((pDataManager->videoSrc == 0x01))
+    {
+        pitchAngle = pDataManager->pitchAngle_target / 2;
+        yawAngle = pDataManager->yawAngle_target / 2;
+    }
+    else
+    {
+        pitchAngle = pDataManager->pitchAngle_target / 5;
+        yawAngle = pDataManager->yawAngle_target / 5;
+    }
     p = (unsigned char*)(&pitchAngle);
     bufSend[14] = *(p+3);
     bufSend[15] = *(p+2);
     bufSend[16] = *(p+1);
     bufSend[17] = *p;
-    float yawAngle = pDataManager->yawAngle_target / 2;
+
     p = (unsigned char*)(&yawAngle);
     bufSend[18] = *(p+3);
     bufSend[19] = *(p+2);

@@ -142,11 +142,12 @@ void ServiceSerialFireCtrl::SendData()
     m_pSerial_FireCtrl->write (bufSend);
 }
 
+
 void ServiceSerialFireCtrl::ReceiveData()
 {
     QByteArray dataRaw;
 
-    while(m_pSerial_FireCtrl->bytesAvailable ()>0)
+    while(m_pSerial_FireCtrl->bytesAvailable () >0)
     {
         dataRaw.clear ();
         dataRaw.resize (m_pSerial_FireCtrl->bytesAvailable ());
@@ -155,6 +156,32 @@ void ServiceSerialFireCtrl::ReceiveData()
     }
 }
 
+/***OLD VERSION=============DEPRECATED BY FLAPPYCAT 20180605
+void ServiceSerialFireCtrl::ReceiveData()
+{
+    QByteArray dataRaw;
+
+    while(true)
+    {
+        unsigned int availBytes = m_pSerial_FireCtrl->bytesAvailable ();
+        if(availBytes <= 0)
+        {
+            //qDebug()<<"Data in FireControl Frame drain;";
+            break;
+        }
+
+        dataRaw.clear ();
+        dataRaw.resize (availBytes);
+        dataRaw = m_pSerial_FireCtrl->read (1024);
+        m_parser_FireCtrl.ParseDownData (dataRaw);
+#if 0
+        static unsigned int twwr = 0;
+        if((twwr++)%100==0)
+        qDebug("Fire Control %5d   bytes",availBytes);
+#endif
+    }
+}
+*/
 
 
 

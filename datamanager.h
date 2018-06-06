@@ -45,6 +45,7 @@ public:
 
     //payload status info
     //1.pod ctrl
+    QMutex mutex_Payload;
     unsigned char ctrlMode;//0x10:manual  0x01:auto    init:0x10
     float pitchAngle_r;//init:0.0
     float yawAngle_r;//init:0.0

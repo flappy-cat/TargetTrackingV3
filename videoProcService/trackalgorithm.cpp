@@ -32,7 +32,7 @@ void TrackAlgorithm::MatchAndTrackInit (Rect rectIn,
                                      int videoSrc)
 {
     //imwrite ("curImg.jpg",frameIn);
-#if FLAPPYDEBUG
+#if 0
     qDebug("rectIn is %d %d %d %d\n", rectIn.x, rectIn.y, rectIn.width, rectIn.height);
     qDebug()<<"feature number:"<<featureNum<<"\n"<<"videoSrc:"<<videoSrc<<"\n";
 
@@ -116,7 +116,7 @@ void TrackAlgorithm::ReadCalibrateFile (int videoSrc, u_int8_t focusZoom)
     else if(videoSrc == 2)
     {
         Measure.Cameracalibrateread(
-            "/home/nvidia/appsettings/algorithm/file/CalibrateInformationInfrared.yml",focusZoom,640,480,videoSrc);
+            "/home/nvidia/appsettings/algorithm/file/CalibrateInformationInfrared.yml",focusZoom,720,576,videoSrc);
     }
 
 }

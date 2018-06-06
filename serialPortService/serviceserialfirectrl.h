@@ -5,6 +5,8 @@
 #include "dataparser4firectrl.h"
 #include <QTimer>
 #include<QtSerialPort/QSerialPort>
+
+
 class ServiceSerialFireCtrl : public QObject
 {
     Q_OBJECT
@@ -32,7 +34,7 @@ public:
     DataParser4FireCtrl m_parser_FireCtrl;
 
 public:
-//    void SendData(const QByteArray& bufArray);
+
     QTimer *timerSend;
     void SendData();
 private slots:
