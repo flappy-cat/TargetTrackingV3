@@ -22,11 +22,6 @@ public:
 
 public:
     QUdpSocket *udpSocket;
- //   void SendUdpGndData();
-
-    //QTimer *timerUdpSend;
-    //void onTimerUdpSendData();
-
 };
 
 #endif // UDPSENDSERVICE_H

@@ -8,21 +8,10 @@
 
 VideoEncodeH264::VideoEncodeH264(QObject* parent):QThread(parent)
 {
-#if 0
-    filename_out = "/home/nvidia/applogs/ds.h264";
-    fp_out = NULL;
-#endif
-    pUdpSendInstance = NULL;
-
-    pCodec = NULL;
-    pCodecCtx = NULL;
 
     framecnt = 0;
     capFrameCnt = 0;
 
-    data_y = NULL;
-    data_u = NULL;
-    data_v = NULL;
     bufVideoSend.fill (0);
     bufVideoSend.resize (2048);
 }
@@ -48,19 +37,20 @@ void VideoEncodeH264::StartEncodeLoop ()
     while(1)
     {
 
-
-
         pDataManager->bIsStartVideoCapture = true;
-        while(!cap.isOpened ())
+        while(!videoSource.isOpened ())
         {
-#if 0
-            qDebug()<<"Attempt to open camera";
-#endif
+
             if(pDataManager->videoSrc == 0x01)
             {
 
-                cap.open (1);
-                if(cap.isOpened ())
+                videoSource.open ("v4l2src device=/dev/video1 ! \
+'video/x-raw,format=(string)I420,width=1280,height=720,framerate=25/1' ! \
+nvvidconv flip-method=0 ! \
+video/x-raw, format=(string)BGRx ! \
+videoconvert ! \
+video/x-raw, format=(string)BGR ! appsinsk");
+                if(videoSource.isOpened ())
                 {
                     qDebug()<<"OPEN CCD SUCESS!";
                 }
@@ -68,13 +58,39 @@ void VideoEncodeH264::StartEncodeLoop ()
                 {
                     qDebug()<<"OPEN CCD FAILED!";
                 }
-
+/*
+gst-launch-1.0 v4l2src device=/dev/video1 !
+        'video/x-raw,format=(string)I420,width=1280,height=720,framerate=25/1' !
+        omxh265enc bitrate=512000 ! 'video/x-h265,stream-format=(string)byte-stream' !
+        h265parse ! filesink location=/var/flappyfifo
+*/
+videoSink.open("appsrc ! \
+autovideoconvert ! \
+omxh265enc bitrate=1000000 ! \
+'video/x-h265,stream-format=(string)byte-stream' ! \
+h265parse ! \
+filesink location=/var/flappyfifo sync=false async=false",0,(double)25,cv::Size(1280,720),true);
+                        if(videoSink.isOpened ())
+                        {
+                            qDebug()<<"OPEN video sink SUCCESS!";
+                        }
+                        else
+                        {
+                            videoSource.release();
+                            qDebug()<<"OPEN video sink FAILED!";
+                        }
             }
             else if(pDataManager->videoSrc == 0x02)
             {
-                cap.open (7);
+                videoSource.open ("nvcamerasrc  sensor_id=7 ! \
+video/x-raw(memory:NVMM), width=(int)1280, height=(int)720,format=(string)I420, framerate=(fraction)25/1 ! \
+nvvidconv flip-method=0 ! \
+video/x-raw, format=(string)BGRx ! \
+videoconvert ! \
+video/x-raw, format=(string)BGR ! appsinsk");
 
-                if(cap.isOpened ())
+
+                if(videoSource.isOpened ())
                 {
                     qDebug()<<"OPEN INFRA CAM SUCESS!";
                 }
@@ -82,76 +98,38 @@ void VideoEncodeH264::StartEncodeLoop ()
                 {
                     qDebug()<<"OPEN INFRA CAM FAILED!";
                 }
+                        videoSink.open("appsrc ! \
+                        autovideoconvert ! \
+                        omxh265enc bitrate=1000000 ! \
+                        'video/x-h265,stream-format=(string)byte-stream' ! \
+                        h265parse ! \
+                        filesink location=/var/flappyfifo sync=false async=false",0,(double)25,cv::Size(1280,720),true);
+                        if(videoSink.isOpened ())
+                        {
+                            qDebug()<<"OPEN video sink SUCCESS!";
+                        }
+                        else
+                        {
+                        videoSource.release();
+                            qDebug()<<"OPEN video sink FAILED!";
+                        }
+                                    }
             }
         }
 
         GlobalInit();
-        InitFFmpeg();
-        int size = /*capFrame.cols * capFrame.rows*/640 * 480;
-        data_y = (unsigned char * )malloc(sizeof(char) * size);
-        data_u = (unsigned char * )malloc(sizeof(char) * size / 4);
-        data_v = (unsigned char * )malloc(sizeof(char) * size / 4);
 
-        //cvNamedWindow ("ssss");
-        //namedWindow ("ssss");
         while(1)
         {
-
-            //static int filenum = 0;
-            //char ss[100];
-            //memset(ss,0,100);
-            //sprintf(ss,"/home/nvidia/pic%d.bmp",filenum++);
-            //m_timeStart = m_timeEnd;
-            //m_timeEnd = QTime::currentTime ();
-
-           //qDebug()<<"One whole frame = "<<m_timeEnd.msecsTo (m_timeStart);
-
             if(!pDataManager->bIsStartVideoCapture)
             {
-
-
-                cap.release ();
-
+                videoSource.release ();
                 capFrameCnt = 0;
-#if 0
-                if(fp_out != NULL)
-                {
-                    fflush(fp_out);
-                    fclose(fp_out);
-                    fp_out = NULL;
-                }
-#endif
-                if(data_y != NULL)
-                {
-                    free(data_y);
-                    data_y = NULL;
-                }
-                if(data_u != NULL)
-                {
-                    free(data_u);
-                    data_u = NULL;
-                }
-                if(data_v != NULL)
-                {
-                    free(data_v);
-                    data_v = NULL;
-                }
-                CloseFFmpeg ();
-                //EASYLOG("CLOSE FFMPEG ENCODER");
                 break;
             }
 
-            cap >> capFrame;
+            videoSource >> capFrame;
 
-            //if(filenum%50 == 0)
-                //imwrite (String(ss),capFrame);
-//if(filenum%30==0){
-            //imshow("ssss",capFrame);
-           // waitKey (1);
-
-//            usleep(30000);
-//}
-            //execute the tracking algorithm
             if(pDataManager->bIsStartTracking == true)
             {
                 if(pDataManager->bIsResetTracking == true)
@@ -189,25 +167,6 @@ void VideoEncodeH264::StartEncodeLoop ()
                     rectangle (capFrame, resultRect, Scalar(255,0, 0, 0), 2, 8, 0);
 
 
-                    {
-                        static Scalar colorTargetTag(250,250,250);
-//                        int x = resultRect.width/2;
-//                        int y = resultRect.height/2;
-
-                        //line(capFrame,Point(resultRect.x-40,y-20) , Point(x-40,y-40) ,colorTargetTag , 2 ,8 ,0);
-//                        line(capFrame,Point(x-40,y-40) , Point(x-20,y-40) ,colorTargetTag , 2 ,8 ,0);
-
-//                        line(capFrame,Point(x+20,y-40) , Point(x+40,y-40) ,colorTargetTag , 2 ,8 ,0);
-//                        line(capFrame,Point(x+40,y-40) , Point(x+40,y-20) ,colorTargetTag , 2 ,8 ,0);
-
-//                        line(capFrame,Point(x+40,y+20) , Point(x+40,y+40) ,colorTargetTag , 2 ,8 ,0);
-//                        line(capFrame,Point(x+40,y+40) , Point(x+20,y+40) ,colorTargetTag , 2 ,8 ,0);
-
-//                        line(capFrame,Point(x-20,y+40) , Point(x-40,y+40) ,colorTargetTag , 2 ,8 ,0);
-//                        line(capFrame,Point(x-40,y+40) , Point(x-40,y+20) ,colorTargetTag , 2 ,8 ,0);
-                    }
-
-
                     Point pointIn = Point(resultRect.x+resultRect.width/2,
                                           resultRect.y+resultRect.height/2);
 
@@ -228,12 +187,6 @@ void VideoEncodeH264::StartEncodeLoop ()
 
                     pDataManager->yawAngle_target = pDataManager->yawAngle_target*180/PI;
                     pDataManager->pitchAngle_target =pDataManager->pitchAngle_target*180/PI;
-
-                    //static int ii= 0;
-                    //if(++ii%25==0)
-                    //{
-                     //   qDebug("pitch angle=%3.6f , yaw angle=%3.6f",pDataManager->pitchAngle_target,pDataManager->yawAngle_target);
-                    //}
 
                     if(pDataManager->assistFlag == 0x01)//open
                     {
@@ -296,271 +249,23 @@ void VideoEncodeH264::StartEncodeLoop ()
             //-----------end----------
 
             resize (capFrame, capFrame, Size(640, 480));
+//=====Till now , the image file is already prepared for encoding which is stored in capFrame!
+        videoSink.write(capFrame);
 
-            av_init_packet(&pkt);
-            pkt.data = NULL;    // packet data will be allocated by the encoder
-            pkt.size = 0;
 
-            convertBGR2YUV420(capFrame,data_y,data_u,data_v);
-
-            pFrame->data[0] = data_y;
-            pFrame->data[1] = data_u;
-            pFrame->data[2] = data_v;
-
-            pFrame->pts = capFrameCnt;
-
-            ret = avcodec_encode_video2(pCodecCtx, &pkt, pFrame, &got_output); // 1ms
-            if (ret < 0)
-            {
-               // printf("Error encoding frame\n");
-                return;
-            }
-            if (got_output)
-            {
-    //            qDebug()<<"size:"<<pkt.size<<"\n";
-    //            printf("size:%d\n", pkt.size);
-    //            printf("Succeed to encode frame:%5d\tsize:%5d\n",framecnt, pkt.size);
-    //            framecnt++;
-#if 0
-                fwrite(pkt.data, 1, pkt.size, fp_out);
-#endif
-                //                pUdpSendInstance->udpSocket->writeDatagram((char*)pkt.data, pkt.size,
-//                                                           QHostAddress(pGlobalSetting->m_str_RemoteAddr_IP),
-//                                                           pGlobalSetting->m_uint_RemoteAddr_Port);
-/*
-                quint32 packetSize = pkt.size;
-                quint32 packetNum = packetSize / 2048 + 1;
-                QByteArray videoBuf;
-                bufVideoSend.resize (9);
-                for (quint32 i = 0 ; i < packetNum ; i++)
-                {
-
-                    quint32 onePckSize;
-                    if(i + 1 <  packetNum) onePckSize = 2048;
-                    if(i + 1 == packetNum) onePckSize = packetSize % 2048;
-
-                    //unsigned char* pFrameData = new unsigned char[9+pkt.size];
-                    videoBuf.resize (onePckSize);
-                    bufVideoSend[0] = 0xEB;
-                    bufVideoSend[1] = 0x90;
-                    bufVideoSend[2] = 0x22;
-                    if(pDataManager->videoSrc == 0x01)
-                    {
-                        bufVideoSend[3] = 0x01;//0x01:visible  0x02:infrared
-                    }
-                    else if(pDataManager->videoSrc == 0x02)
-                    {
-                        bufVideoSend[3] = 0x02;//0x01:visible  0x02:infrared
-                    }
-                    bufVideoSend[4] = (onePckSize & 0x0000FF00)>>8;
-                    bufVideoSend[5] = onePckSize & 0x000000FF;
-                    bufVideoSend[6] = packetNum;//0x01;
-                    if(capFrameCnt%10 == 0)
-                        bufVideoSend[7] = 0x00;
-                    else
-                        bufVideoSend[7] = 0x01;
-                    bufVideoSend[8] = 0x19;//Current frame rate
-
-                    videoBuf.fromRawData ((char*)(pkt.data + i*2048) , onePckSize);
-
-                    bufVideoSend.append (videoBuf);
-
-                    pUdpSendInstance->udpSocket->writeDatagram(bufVideoSend,
-                                                               QHostAddress(pGlobalSetting->m_str_RemoteAddr_IP),
-                                                               pGlobalSetting->m_uint_RemoteAddr_Port);
-
-                    videoBuf.clear ();
-                }
-*/
-
-//===========================================================================================
-                unsigned char* pFrameData = new unsigned char[9+pkt.size];
-                pFrameData[0] = 0xEB;
-                pFrameData[1] = 0x90;
-                pFrameData[2] = 0x22;
-                if(pDataManager->videoSrc == 0x01)
-                {
-                    pFrameData[3] = 0x01;//0x01:visible  0x02:infrared
-                }
-                else if(pDataManager->videoSrc == 0x02)
-                {
-                    pFrameData[3] = 0x02;//0x01:visible  0x02:infrared
-                }
-                pFrameData[4] = (pkt.size & 0x0000FF00)>>8;
-                pFrameData[5] = pkt.size & 0x000000FF;
-                pFrameData[6] = 0x01;
-                if(capFrameCnt%10 == 0)
-                    pFrameData[7] = 0x00;
-                else
-                    pFrameData[7] = 0x01;
-                pFrameData[8] = 0x19;
-                memcpy (pFrameData+9, pkt.data, pkt.size);
-
-                pUdpSendInstance->udpSocket->writeDatagram((char*)/*pkt.data*/pFrameData, pkt.size+9,
-                                                           QHostAddress(pGlobalSetting->m_str_RemoteAddr_IP),
-                                                           pGlobalSetting->m_uint_RemoteAddr_Port);
-
-                if(pFrameData != NULL)
-                {
-                    delete pFrameData;
-                    pFrameData = NULL;
-                }
-
-//===============================================================================================
-                av_free_packet(&pkt);
-            }
+        }
 
             //usleep (5000);
 
             capFrameCnt++;
-        }
-        //destroyAllWindows ();
-
-    }
-
-
 }
+
+
+
 
 
 
 void VideoEncodeH264::GlobalInit()
 {
-    pUdpSendInstance = UdpSendService::GetInstance();
-
-#ifdef SAVELOCALFILE
-    fp_out = fopen(filename_out, "wb");
-    if (!fp_out)
-    {
-        //printf("Could not open %s\n", filename_out);
-        return;
-    }
-#endif
-}
-
-int VideoEncodeH264::InitFFmpeg()
-{
-//    int w = capFrame.cols;
-//    int h = capFrame.rows;
-    int w = 640;
-    int h = 480;
-
-    avcodec_register_all();
-
-    pCodec = avcodec_find_encoder(AV_CODEC_ID_H264);
-    if (!pCodec)
-    {
-        //printf("Codec not found\n");
-        return -1;
-    }
-    pCodecCtx = avcodec_alloc_context3(pCodec);
-    if (!pCodecCtx)
-    {
-        //printf("Could not allocate video codec context\n");
-        return -1;
-    }
-    pCodecCtx->bit_rate = 400000;
-    pCodecCtx->width = w;
-    pCodecCtx->height = h;
-    pCodecCtx->time_base.num = 1;
-    pCodecCtx->time_base.den = 25;
-    pCodecCtx->gop_size = 10;
-    pCodecCtx->max_b_frames = 1;
-    pCodecCtx->pix_fmt = AV_PIX_FMT_YUV420P;
-
-    av_opt_set(pCodecCtx->priv_data, "preset", "slow", 0);
-
-    if (avcodec_open2(pCodecCtx, pCodec, NULL) < 0)
-    {
-        //printf("Could not open codec\n");
-        return -1;
-    }
-
-    pFrame = av_frame_alloc();
-    if (!pFrame)
-    {
-       // printf("Could not allocate video frame\n");
-        return -1;
-    }
-    pFrame->format = pCodecCtx->pix_fmt;
-    pFrame->width  = pCodecCtx->width;
-    pFrame->height = pCodecCtx->height;
-
-    int ret;
-    ret = av_image_alloc(pFrame->data, pFrame->linesize, pCodecCtx->width, pCodecCtx->height,
-                         pCodecCtx->pix_fmt, 16);
-    if (ret < 0)
-    {
-        //printf("Could not allocate raw picture buffer\n");
-        return -1;
-    }
-#ifdef FLAPPYDEBUG
-    qDebug()<<"Init decoder sccessfull";
-#endif
-    return 0;
-}
-
-void VideoEncodeH264::CloseFFmpeg ()
-{
-    if(pFrame != NULL)
-    {
-//        av_freep(&pFrame->data[0]);
-        av_frame_free (&pFrame);
-        pFrame = NULL;
-    }
-    if(pCodecCtx != NULL)
-    {
-        avcodec_close(pCodecCtx);
-        av_free(pCodecCtx);
-        pCodecCtx = NULL;
-    }
-//    if(pCodec != NULL)
-//    {
-//        av_free(pCodec);
-//        pCodec = NULL;
-//    }
-}
-
-
-void VideoEncodeH264::convertBGR2YUV420(Mat in, unsigned char* out_y, unsigned char* out_u, unsigned char* out_v)
-{
-    int idx_in = 0;
-    int idx_out_y = 0;
-    int idx_out_u = 0;
-    int idx_out_v = 0;
-
-    Mat tmp;
-    // first, convert the input image into YCbCr
-    tmp = Mat(Size(in.cols, in.rows), in.type());
-    cvtColor(in, tmp, CV_RGB2YCrCb);
-
-    quint32 i = 0;
-    qint32 j = 0;
-    /*  * widthStep = channel number * width
-    * if width%4 == 0  * for example, width = 352, width%4 == 0, widthStep = 3 * 352 = 1056 */ ;
-    for(j = 0; j < in.rows; j+=1)
-    {
-        idx_in = j * in.step;
-        for(i = 0; i < in.step; i+=12)
-        {
-            // We use the chroma sample here, and put it into the out buffer
-            // take the luminance sample
-            out_y[idx_out_y] = tmp.data[idx_in + i + 0]; // Y
-            idx_out_y++;
-            out_y[idx_out_y] = tmp.data[idx_in + i + 3]; // Y
-            idx_out_y++;
-            out_y[idx_out_y] = tmp.data[idx_in + i + 6]; // Y
-            idx_out_y++;
-            out_y[idx_out_y] = tmp.data[idx_in + i + 9]; // Y
-            idx_out_y++;
-            if((j % 2) == 0)
-            {
-                // take the blue-difference and red-difference chroma components sample
-                out_u[idx_out_u++] = tmp.data[idx_in + i + 1]; // Cr U
-                out_u[idx_out_u++] = tmp.data[idx_in + i + 7]; // Cr U
-                out_v[idx_out_v++] = tmp.data[idx_in + i + 2]; // Cb V
-                out_v[idx_out_v++] = tmp.data[idx_in + i + 8]; // Cb V
-            }
-        }
-    }
-
+//TODO: ADD CREATE FIFO FILE CODE HERE
 }

@@ -41,4 +41,10 @@ int main(int argc, char *argv[])
 
     return a.exec();
 }
+/*
+TODO list:
+20180606 pm:
+1.add fifo file create code
+2.execute rtsp automatically.
 
+*/

@@ -15,10 +15,10 @@ SOURCES += main.cpp \
     udpService/serviceudpvideo.cpp \
     datamanager.cpp \
     videoProcService/videoencodeh264.cpp \
-    udpService/udpsendservice.cpp \
     serialPortService/serviceserialfirectrl.cpp \
     serialPortService/dataparser4firectrl.cpp \
-    videoProcService/trackalgorithm.cpp
+    videoProcService/trackalgorithm.cpp \
+    udpService/udpsendservice.cpp
 
 HEADERS += \
     globalsettings.h \
@@ -28,7 +28,6 @@ HEADERS += \
     udpService/serviceudpvideo.h \
     datamanager.h \
     videoProcService/videoencodeh264.h \
-    udpService/udpsendservice.h \
     serialPortService/serviceserialfirectrl.h \
     serialPortService/dataparser4firectrl.h \
     videoProcService/trackalgorithm.h \
@@ -44,7 +43,8 @@ HEADERS += \
     algorithm/include/labdata.hpp \
     algorithm/include/recti_global.h \
     algorithm/include/recti.h \
-    algorithm/include/recttools.hpp
+    algorithm/include/recttools.hpp \
+    udpService/udpsendservice.h
 
 INCLUDEPATH += ./serialPortService ./udpService ./videoProcService ./algorithm/include
 
