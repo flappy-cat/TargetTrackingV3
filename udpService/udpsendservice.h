@@ -22,10 +22,10 @@ public:
 
 public:
     QUdpSocket *udpSocket;
-    void SendUdpGndData();
+ //   void SendUdpGndData();
 
-    QTimer *timerUdpSend;
-    void onTimerUdpSendData();
+    //QTimer *timerUdpSend;
+    //void onTimerUdpSendData();
 
 };
 
