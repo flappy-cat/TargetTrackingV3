@@ -15,6 +15,7 @@ using namespace cv;
 #include "trackalgorithm.h"
 #include "QTime"
 #include <QThread>
+#include<QProcess>
 class VideoEncodeH264 : public QThread
 {
     Q_OBJECT
@@ -49,6 +50,9 @@ public:
     //=======For evaluating the time
     QTime m_timeStart;
     QTime m_timeEnd;
+
+    int fifo_fd;//named pipe file descriptor
+    QProcess* rtspLoop;
 };
 
 #endif // VIDEOENCODEH264_H

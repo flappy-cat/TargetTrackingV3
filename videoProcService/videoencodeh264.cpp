@@ -3,9 +3,12 @@
 #include <QDebug>
 #include "globalsettings.h"
 #include "datamanager.h"
-
-
-
+#include<limits.h>
+#include<sys/types.h>
+#include<sys/stat.h>
+#include<fcntl.h>
+#define FIFO_NAME "/var/flappyfifo.tt"
+#define FIFO_SIZE PIPE_BUF
 VideoEncodeH264::VideoEncodeH264(QObject* parent):QThread(parent)
 {
 
@@ -14,6 +17,7 @@ VideoEncodeH264::VideoEncodeH264(QObject* parent):QThread(parent)
 
     bufVideoSend.fill (0);
     bufVideoSend.resize (2048);
+    rtspLoop=NULL;
 }
 
 
@@ -33,10 +37,9 @@ void VideoEncodeH264::StartEncodeLoop ()
 {
     GlobalSettings *pGlobalSetting = GlobalSettings::getInstance ();
     DataManager *pDataManager = DataManager::GetInstance ();
-
+    GlobalInit();
     while(1)
     {
-
         pDataManager->bIsStartVideoCapture = true;
         while(!videoSource.isOpened ())
         {
@@ -59,17 +62,14 @@ video/x-raw, format=(string)BGR ! appsinsk");
                     qDebug()<<"OPEN CCD FAILED!";
                 }
 /*
-gst-launch-1.0 v4l2src device=/dev/video1 !
-        'video/x-raw,format=(string)I420,width=1280,height=720,framerate=25/1' !
-        omxh265enc bitrate=512000 ! 'video/x-h265,stream-format=(string)byte-stream' !
-        h265parse ! filesink location=/var/flappyfifo
+gst-launch-1.0 v4l2src device=/dev/video1 ! 'video/x-raw,format=(string)I420,width=1280,height=720,framerate=25/1' ! omxh265enc bitrate=512000 ! 'video/x-h265,stream-format=(string)byte-stream' ! h265parse ! filesink location=/var/flappyfifo
 */
 videoSink.open("appsrc ! \
 autovideoconvert ! \
 omxh265enc bitrate=1000000 ! \
 'video/x-h265,stream-format=(string)byte-stream' ! \
 h265parse ! \
-filesink location=/var/flappyfifo sync=false async=false",0,(double)25,cv::Size(1280,720),true);
+filesink location=/var/flappyfifo.tt sync=false async=false",0,(double)25,cv::Size(1280,720),true);
                         if(videoSink.isOpened ())
                         {
                             qDebug()<<"OPEN video sink SUCCESS!";
@@ -117,7 +117,7 @@ video/x-raw, format=(string)BGR ! appsinsk");
             }
         }
 
-        GlobalInit();
+
 
         while(1)
         {
@@ -232,7 +232,7 @@ video/x-raw, format=(string)BGR ! appsinsk");
 
                 }
             }
-              if(pDataManager->assistFlag == 0x01)
+            if(pDataManager->assistFlag == 0x01)
               {
                 //Set flag on image center
                 int imgCenterX;
@@ -246,17 +246,12 @@ video/x-raw, format=(string)BGR ! appsinsk");
                 line(capFrame,Point(imgCenterX-20,imgCenterY) , Point(imgCenterX+20,imgCenterY) ,Scalar(250,250,250), 1 ,8 ,0);
                 line(capFrame,Point(imgCenterX,imgCenterY-20) , Point(imgCenterX,imgCenterY+20) ,Scalar(250,250,250) , 1 ,8 ,0);
              }
-            //-----------end----------
 
             resize (capFrame, capFrame, Size(640, 480));
-//=====Till now , the image file is already prepared for encoding which is stored in capFrame!
-        videoSink.write(capFrame);
-
-
+            videoSink.write(capFrame);
         }
 
             //usleep (5000);
-
             capFrameCnt++;
 }
 
@@ -268,4 +263,19 @@ video/x-raw, format=(string)BGR ! appsinsk");
 void VideoEncodeH264::GlobalInit()
 {
 //TODO: ADD CREATE FIFO FILE CODE HERE
+    int fifo;
+    unlink(FIFO_NAME);
+    if(fifo = mkfifo(FIFO_NAME,O_WRONLY)<0)
+    {
+        qDebug()<<"mkfifo error";
+    }
+    if(fifo_fd=open(FIFO_NAME,O_RDONLY)<0)
+    {
+        qDebug()<<"open fifo error";
+    }
+rtspLoop = new QProcess(0);
+QString exepath = "/usr/local/bin/testOnDemandRTSPServer";
+QStringList paramlist;
+rtspLoop->start (exepath,paramlist);
+
 }

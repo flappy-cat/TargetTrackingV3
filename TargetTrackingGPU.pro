@@ -48,12 +48,14 @@ HEADERS += \
 
 INCLUDEPATH += ./serialPortService ./udpService ./videoProcService ./algorithm/include
 
-#INCLUDEPATH += /usr/local/include/opencv310 /usr/local/include/ffmpeg /usr/include/log4cplus
-PKGCONFIG += opencv
-#LIBS += -L/usr/local/lib/opencv310 -lopencv_core -lopencv_imgproc   -lopencv_videoio \
-#    -lopencv_highgui  -lopencv_video  -lopencv_features2d -lopencv_calib3d  -lopencv_imgcodecs \
-#   -lopencv_shape -lopencv_cudaobjdetect -lopencv_cudawarping -lopencv_cudaimgproc
-LIBS += -L/usr/local/lib -lcvFeatureExtractMatch -lKCFTracker -lCalibrateInformationMeasure
+INCLUDEPATH += /usr/local/include/opencv310 /usr/local/include/ffmpeg \
+                /usr/include/log4cplus
+
+LIBS += -L/usr/local/lib/opencv310 -lopencv_core -lopencv_imgproc   -lopencv_videoio \
+    -lopencv_highgui  -lopencv_video  -lopencv_features2d -lopencv_calib3d  -lopencv_imgcodecs \
+    -lopencv_shape -lopencv_cudaobjdetect -lopencv_cudawarping -lopencv_cudaimgproc
+LIBS += -L/usr/local/lib -lavcodec-ffmpeg -lavutil-ffmpeg
+LIBS += -L../algorithm/lib -lcvFeatureExtractMatch -lKCFTracker -lCalibrateInformationMeasure
 
 OBJECTS_DIR += ./temp
 MOC_DIR += ./temp

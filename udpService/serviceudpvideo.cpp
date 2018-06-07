@@ -5,8 +5,6 @@
 #include <vector>
 using namespace std;
 #include <QDebug>
-#include "servicevideoproc.h"
-
 
 ServiceUDPVideo::ServiceUDPVideo(QObject *parent) : QObject(parent)
 {

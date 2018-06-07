@@ -30,6 +30,7 @@ int main(int argc, char *argv[])
     VideoEncodeH264     encThread;
     ServiceUDPVideo     udpThread;
 
+
     QObject::connect (&encThread,SIGNAL(finished()),&encThread,SLOT(deleteLater()));
     QObject::connect (&udpThread,SIGNAL(Send_Data_signal(QByteArray)),pSerialServicePayload,SLOT(Send_Data(QByteArray)));
 
@@ -41,10 +42,4 @@ int main(int argc, char *argv[])
 
     return a.exec();
 }
-/*
-TODO list:
-20180606 pm:
-1.add fifo file create code
-2.execute rtsp automatically.
 
-*/
